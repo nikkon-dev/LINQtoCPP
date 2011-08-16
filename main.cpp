@@ -97,3 +97,23 @@ BEGIN_TEST(Test_with_lists)
 
 }
 END_TEST
+
+BEGIN_TEST(Test_orderby)
+{
+	vector<int> v;
+	for (int i = 0; i < 10; ++i)
+		v.push_back(i);
+	auto res = create_dataset(v).orderby([](int a, int b){ return a > b; });
+	printCollection(res);
+}
+END_TEST
+
+BEGIN_TEST(Test_orderby_with_list)
+{
+	list<int> v;
+	for (int i = 0; i < 10; ++i)
+		v.push_back(i);
+	auto res = create_dataset(v).orderby([](int a, int b){ return a > b; });
+	printCollection(res);
+}
+END_TEST

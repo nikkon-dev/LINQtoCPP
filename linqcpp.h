@@ -5,6 +5,7 @@
 #include <functional>
 #include <memory>
 #include <vector>
+#include <algorithm>
 
 namespace linq_to_cpp
 {
@@ -22,12 +23,25 @@ namespace linq_to_cpp
 	template <class _T, class container_type = vector<_T>>
 	class DataSet
 	{
+		typedef DataSet<_T, container_type> dataset_type;
 	private:
 		container_type _internal_container;
-	public:
-		DataSet(const container_type &ct)
+
+		template <class _Cnt, class _Pr>
+		void _internal_sort(_Cnt& cnt, _Pr pr)
 		{
-			_internal_container.assign(ct.begin(), ct.end());
+			std::sort(cnt.begin(), cnt.end(), pr);
+		}
+
+		template <class _Pr>
+		void _internal_sort(std::list<_T>& cnt, _Pr pr)
+		{
+			cnt.sort(pr);
+		}
+
+	public:
+		DataSet(const container_type &ct) : _internal_container(ct)
+		{
 		}
 
 		typename container_type::const_iterator begin() 
@@ -39,7 +53,7 @@ namespace linq_to_cpp
 			return _internal_container.end();
 		}
 
-		DataSet<_T, container_type> where(std::function<bool (const _T&)> pred)
+		dataset_type where(std::function<bool (const _T&)> pred)
 		{
 			container_type tmpCnt;
 			for (auto i = _internal_container.begin(); i != _internal_container.end(); ++i)
@@ -48,7 +62,15 @@ namespace linq_to_cpp
 					tmpCnt.push_back(*i);
 			}
 
-			return DataSet<_T, container_type>(tmpCnt);
+			return create_dataset(tmpCnt);
+		}
+
+		dataset_type orderby(std::function<bool (const _T&, const _T&)> pred)
+		{
+			container_type tmpCnt;
+			tmpCnt = _internal_container;
+			_internal_sort(tmpCnt, pred);
+			return create_dataset(tmpCnt);
 		}
 
 		template <class _U>
