@@ -100,6 +100,7 @@ namespace linq_to_cpp
 		{
 			typedef decltype (testfunc<_U>(container_type())) tmpcont_type;
 			tmpcont_type tmpCont;
+			_internal_reserve(tmpCont, _internal_container.size());
 
 			auto Iter = std::back_inserter(tmpCont);
 			std::for_each(_internal_container.begin(), _internal_container.end(), [=,&Iter](const _T& i){
