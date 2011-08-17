@@ -6,6 +6,7 @@
 #include <memory>
 #include <vector>
 #include <algorithm>
+#include <iterator>
 
 namespace linq_to_cpp
 {
@@ -39,9 +40,29 @@ namespace linq_to_cpp
 			cnt.sort(pr);
 		}
 
+		template <class _Obj>
+		void _internal_reserve(_Obj &cnt, size_t size)
+		{
+			cnt.reserve(size);
+		}
+		template <>
+		void _internal_reserve(std::list<_T>& cnt, size_t size)
+		{
+			//do nothing
+		}
+
 	public:
 		DataSet(const container_type &ct) : _internal_container(ct)
 		{
+		}
+
+		DataSet(container_type&& ct)
+		{
+			_internal_container = std::move(ct);
+		}
+		DataSet(DataSet&& ds)
+		{
+			_internal_container = std::move(ds._internal_container);
 		}
 
 		typename container_type::const_iterator begin() 
@@ -56,12 +77,12 @@ namespace linq_to_cpp
 		dataset_type where(std::function<bool (const _T&)> pred)
 		{
 			container_type tmpCnt;
-			for (auto i = _internal_container.begin(); i != _internal_container.end(); ++i)
-			{
-				if (pred(*i))
-					tmpCnt.push_back(*i);
-			}
-
+			_internal_reserve(tmpCnt, _internal_container.size());
+			auto Iter = std::back_inserter(tmpCnt);
+			std::for_each(_internal_container.begin(), _internal_container.end(), [=,&Iter](const _T& i){
+				if (pred(i))
+					*Iter++ = i;
+			});
 			return create_dataset(tmpCnt);
 		}
 
@@ -79,9 +100,12 @@ namespace linq_to_cpp
 		{
 			typedef decltype (testfunc<_U>(container_type())) tmpcont_type;
 			tmpcont_type tmpCont;
-			for (auto i = _internal_container.begin(); i!=_internal_container.end(); ++i){
-				tmpCont.push_back(pred(*i));
-			}
+
+			auto Iter = std::back_inserter(tmpCont);
+			std::for_each(_internal_container.begin(), _internal_container.end(), [=,&Iter](const _T& i){
+				*Iter++ = pred(i);
+			});
+
 			return DataSet<_U, decltype (testfunc<_U>(container_type()))>(tmpCont);
 		}
 	};
